@@ -1,0 +1,73 @@
+// contracts/NFT.sol
+// SPDX-License-Identifier: MIT OR Apache-2.0
+pragma solidity ^0.8.3;
+
+import "@openzeppelin/contracts/utils/Counters.sol";
+import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
+import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
+
+import "hardhat/console.sol";
+
+
+contract EVBatteryDigitalPassport is ERC721URIStorage {
+    using Counters for Counters.Counter;
+    Counters.Counter private _tokenIds;
+    address contractAddress;
+    address miner;
+
+ 
+
+    constructor(address NFTManagement) ERC721("EVBattery Digital Passport", "DigiPass") {
+         require(NFTManagement != address(0));
+        contractAddress = NFTManagement;
+        miner = msg.sender;
+    }
+
+  event EV_Battery_DigitalPassportNFTSuccessfullyCreated(address _to, uint256 _tokenId, string  _uri);
+ 
+  event DynamicDigitalPassportNFTsuccessfullyCreated(address _to, uint256 _tokenId, string  _uri, bool dynamic);
+event DynamicNFTnewStatus(uint256 tokenId,string uri); 
+
+modifier onlyNFTManagementSC(){
+    require(msg.sender == contractAddress);
+    _;
+}
+
+modifier onlyMiner(){
+    require(msg.sender == miner);
+    _;
+}
+ ////0x0000000000000000000000000000000000000000000000000000006d6168616d
+    function mintEVBatteryDigitalPassportNFT(string memory tokenURI,bool updatable) public onlyMiner   {
+        _tokenIds.increment();
+        uint256 newItemId = _tokenIds.current();
+        _mint(msg.sender, newItemId);
+        _setTokenURI(newItemId, tokenURI);
+         _setTokenDynamic(newItemId, updatable);//dynamic = true , static = false
+        setApprovalForAll(contractAddress, true);
+        if(updatable == true)
+         emit DynamicDigitalPassportNFTsuccessfullyCreated(msg.sender, newItemId, tokenURI, updatable);
+        else
+        emit EV_Battery_DigitalPassportNFTSuccessfullyCreated(msg.sender, newItemId, tokenURI);
+       
+        
+    }
+
+
+ //only registered component manufacturers
+  function TransferNFTOwnership(uint tokenId, address newOwner)   public  
+  {
+      transferFrom(miner, newOwner, tokenId);//transferring ownership
+       
+  }
+
+//only registered 
+  function UpdateDynamicNFTstatus( string memory uri, uint tokenId) external{
+       _setTokenURI(tokenId, uri);
+      emit DynamicNFTnewStatus(tokenId, uri);
+  }
+
+
+
+
+}
