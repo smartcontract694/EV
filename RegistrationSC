@@ -1,0 +1,92 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
+pragma solidity 0.8.6;
+
+
+
+///////////////////////
+///Registration////
+//////////////////////
+   contract RegistrationSC{
+   
+    address registrationManager; //owner
+    mapping(address=>bool) RegisteredEMNFTCreators;//earth minerals NFT creatros
+    mapping(address=>bool) RegisteredCompManufNFTCreators;//earth minerals NFT creatros
+    mapping(address=>bool) RegisteredRefineryWorkers;//Refinery workers
+    mapping(address=>bool) RegisteredAuditors;//auditors for the sustainability company
+    mapping(address=>bool) RegisteredOracles;//oracles
+    
+constructor() public{
+       registrationManager= msg.sender;
+    }
+   
+    modifier onlyRegistrationManager{
+      require(msg.sender == registrationManager);
+      _;
+    }
+
+     //EMNFTCreators/owners
+      function RegisterEMNFTCreator(address a) onlyRegistrationManager public{
+        RegisteredEMNFTCreators[a]=true;
+    }
+   
+    function RevokeEMNFTCreator(address a) onlyRegistrationManager public{
+        RegisteredEMNFTCreators[a]=false;
+    }
+   
+    function isRegisteredEMNFTCreator(address a)public{
+        require(RegisteredEMNFTCreators[a]);
+    }
+
+
+    //Component Manufacturer NFT Creator
+       function RegisterCompManuCreator(address a) onlyRegistrationManager public{
+        RegisteredCompManufNFTCreators[a]=true;
+    }
+   
+    function RevokeCompManuCreator(address a) onlyRegistrationManager public{
+        RegisteredCompManufNFTCreators[a]=false;
+    }
+    function isRegisteredCompMnaufNFTCreator(address a) public {
+        require(RegisteredCompManufNFTCreators[a]);    
+       
+    }
+
+    //Refinery Workers
+    function RegisterRefineryWorker(address a) onlyRegistrationManager public{
+        RegisteredRefineryWorkers[a]=true;
+    }
+   
+    function RevokeRefineryWorker(address a) onlyRegistrationManager public{
+        RegisteredRefineryWorkers[a]=false;
+    }
+    function isRegisteredRefineryWorker(address a) public {
+        require(RegisteredRefineryWorkers[a]);    
+       
+    }
+     //Auditor
+    function RegisterAuditor(address a) onlyRegistrationManager public{
+        RegisteredAuditors[a]=true;
+    }
+   
+    function RevokeAuditor(address a) onlyRegistrationManager public{
+        RegisteredAuditors[a]=false;
+    }
+    function isRegisteredAuditor(address a) public {
+        require(RegisteredAuditors[a]);    
+       
+    }
+
+//Oracles
+    function RegisterOracle(address a) onlyRegistrationManager public{
+        RegisteredOracles[a]=true;
+    }
+   
+    function RevokeOracle(address a) onlyRegistrationManager public{
+        RegisteredOracles[a]=false;
+    }
+    function isRegisteredOracle(address a) public {
+        require(RegisteredOracles[a]);    
+       
+    }
+
+}
