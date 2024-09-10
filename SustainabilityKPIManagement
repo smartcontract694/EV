@@ -1,0 +1,167 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
+pragma solidity ^0.8.6;
+import "hardhat/console.sol";
+import "./CompManuNFT.sol";
+import "./EarthMineralsNFT.sol";
+import "./RegistrationSC.sol";
+
+contract SustainabilityKPIManagement {
+
+address sustainabilityAgency; // EA
+bytes32 signedAgreementHash;
+RegistrationSC registration;
+uint cathodeType;
+mapping (address=> address) earthMineralsNFTSC;//address of each earth mineral NFT owner is mapped to address of SC
+mapping (address=> address) compManudNFTSC;//address of each component manufacturer NFT owner
+
+//KPI scores
+uint256 ST;//structure
+uint256 MS;//material sourcing
+uint256 RM;//recycling method
+uint256 Rec;//recyclability
+uint256 ED;//energy density
+uint256 EI; //environmental impact
+uint256 LE;//lifecycle efficiency
+uint256 TC;//toxic components
+uint256 CT;//charging time
+uint256 SD;//self discharging
+
+//event
+event UnannouncedVisitByAuditor(bytes32 visitHash, uint256 visitTimestamp);
+event PeriodicVisitReportByAuditor(bytes32 visitHash, uint256 visitTimestamp);
+event DataAnalyticsByOracles(bytes32 hash, uint256 timestamp);
+event EnergyDensityKPIScoreUpdate(uint score,uint cathodeChemistry, bytes32 hash, uint256 timestamp);
+event RecyclabilityKPIScoreUpdate(uint score,uint cathodeChemistry, bytes32 hash, uint256 timestamp);
+event RecyclingMethodKPIScoreUpdate(uint score,uint cathodeChemistry, bytes32 hash, uint256 timestamp);
+event MaterialSourcingKPIScoreUpdate(uint score,uint cathodeChemistry, bytes32 hash, uint256 timestamp);
+event StructureKPIScoreUpdate(uint score,uint cathodeChemistry, bytes32 hash, uint256 timestamp);
+event SelfdischargeKPIScoreUpdate(uint score,uint cathodeChemistry, bytes32 hash, uint256 timestamp);
+event ChargingTimeKPIScoreUpdate(uint score,uint cathodeChemistry, bytes32 hash, uint256 timestamp);
+event ToxicComponentsKPIscoreUpdate(uint score,uint cathodeChemistry, bytes32 hash, uint256 timestamp);
+event LifecycleEfficiencyKPIscoreUpdate(uint score,uint cathodeChemistry, bytes32 hash, uint256 timestamp);
+event EnvironmentalImpactKPIscore(uint score,uint cathodeChemistry, bytes32 hash, uint256 timestamp);
+event InititalKPIscoresInitializedBySustainabilityAgency(bytes32 hash, uint256 STscore, uint256 MSscore, 
+     uint256 RMscore,uint256 RecScore,uint256 EDscore,uint256 EIscore,uint256 LEscore,
+     uint256 TCscore, uint256 CTscore,uint256 SDscore);
+event OverAllSustainabilityScore(uint256 overAllSustianbailityScore, uint256 CathodeType);
+
+//0x0000000000000000000000000000000000000000000000000000006d6168616d
+     constructor(address regSC, bytes32 agreementIPFShash, address agency, uint256 ct) {
+       require(agency != address(0));
+       sustainabilityAgency= agency;
+       registration =  RegistrationSC(regSC);
+       signedAgreementHash = agreementIPFShash;
+       cathodeType = ct;
+      
+    }
+modifier onlySusAgency(){
+ require(msg.sender == sustainabilityAgency);
+        _;
+}
+//initial values of KPI scores
+function provideInitialKPIscores(bytes32 hash, uint256 STscore, uint256 MSscore, 
+     uint256 RMscore,uint256 RecScore,uint256 EDscore,uint256 EIscore,uint256 LEscore,
+     uint256 TCscore, uint256 CTscore,uint256 SDscore)onlySusAgency public
+{
+        ST = STscore;//Structure
+        MS = MSscore;//material sourcing
+        RM = RMscore;//recycling method
+        Rec = RecScore;//recyclability
+        ED = EDscore;//energy density
+        EI = EIscore; //environmental impact
+        LE = LEscore;//lifecycle efficiency
+        TC = TCscore;//toxic components
+        CT = CTscore;//charging time
+        SD = SDscore;//self discharging
+        emit InititalKPIscoresInitializedBySustainabilityAgency(hash,ST, MS,RM,Rec,ED,EI,LE,TC,CT,SD);
+} 
+//auditor
+    function UnannouncedVisitReportDetails(bytes32 visitHash,uint256 visitTimestamp) public
+    {
+        registration.isRegisteredAuditor(msg.sender);//must be a registered auditor
+        emit UnannouncedVisitByAuditor(visitHash,visitTimestamp);
+    }
+
+
+ function PeriodicVisitReportDetails(bytes32 visitHash,uint256 visitTimestamp) public
+    {
+        registration.isRegisteredAuditor(msg.sender);//must be a registered auditor
+        emit PeriodicVisitReportByAuditor(visitHash,visitTimestamp);
+    }
+//oracle
+function ProvideDataAnlytics(bytes32 fileHash)public{
+    registration.isRegisteredOracle(msg.sender);//must be a registered oracle
+    emit DataAnalyticsByOracles(fileHash, block.timestamp);
+}
+
+//sustainability agency
+//cathodeChemistry: 1, 2, 3, 4
+function ProvideStructureKPIscore(uint score,uint cathodeChemistry, bytes32 hash) onlySusAgency public{
+    emit StructureKPIScoreUpdate(score, cathodeChemistry, hash, block.timestamp);
+    ST = score;
+    CalculateOverallSustainabilityScore();
+}
+
+function ProvideMaterialSourcingKPIscore(uint score,uint cathodeChemistry, bytes32 hash) onlySusAgency public{
+    emit MaterialSourcingKPIScoreUpdate(score, cathodeChemistry, hash, block.timestamp);
+    MS = score;
+    CalculateOverallSustainabilityScore();
+}
+
+function ProvideRecyclingMethodKPIscore(uint score,uint cathodeChemistry, bytes32 hash) onlySusAgency public{
+    emit RecyclingMethodKPIScoreUpdate(score, cathodeChemistry, hash, block.timestamp);
+    RM = score;
+    CalculateOverallSustainabilityScore();
+}
+
+function ProvideRecyclabilityKPIscore(uint score,uint cathodeChemistry, bytes32 hash) onlySusAgency public{
+    emit RecyclabilityKPIScoreUpdate(score, cathodeChemistry, hash, block.timestamp);
+    Rec = score;
+    CalculateOverallSustainabilityScore();
+}
+
+function ProvideEnergyDensityKPIscore(uint score,uint cathodeChemistry, bytes32 hash) onlySusAgency public{
+    emit EnergyDensityKPIScoreUpdate(score, cathodeChemistry, hash, block.timestamp);
+    ED = score;
+    CalculateOverallSustainabilityScore();
+}
+
+function ProvideEnvironmentalImpactKPIscore(uint KPIscore, uint cathodeChemistry, bytes32 hash)onlySusAgency public{
+    emit EnvironmentalImpactKPIscore(KPIscore, cathodeChemistry, hash, block.timestamp);
+    EI = KPIscore;
+    CalculateOverallSustainabilityScore();
+}
+
+function ProvideLifecycleEfficiencyKPIscore(uint score,uint cathodeChemistry,bytes32  hash)onlySusAgency public
+{
+    emit LifecycleEfficiencyKPIscoreUpdate(score, cathodeChemistry, hash, block.timestamp);
+    LE = score;
+    CalculateOverallSustainabilityScore();
+}
+
+function ProvideToxicComponentsKPIscore(uint KPIscore, uint cathodeChemistry, bytes32 hash)onlySusAgency public{
+    emit ToxicComponentsKPIscoreUpdate(KPIscore, cathodeChemistry, hash, block.timestamp);
+    TC = KPIscore;
+    CalculateOverallSustainabilityScore();
+}
+
+function ProvideChargingTimeKPIscore(uint KPIscore, uint cathodeChemistry, bytes32 hash)onlySusAgency public{
+    emit ChargingTimeKPIScoreUpdate(KPIscore, cathodeChemistry, hash, block.timestamp);
+    CT = KPIscore;
+    CalculateOverallSustainabilityScore();
+}
+
+function ProvideSelfdischargeKPIscore(uint KPIscore, uint cathodeChemistry, bytes32 hash)onlySusAgency public{
+    emit SelfdischargeKPIScoreUpdate(KPIscore, cathodeChemistry, hash, block.timestamp);
+    SD = KPIscore;
+    CalculateOverallSustainabilityScore();
+
+}
+function CalculateOverallSustainabilityScore()internal {
+    uint256 overAllscore = ST + MS + RM +Rec + ED +
+        EI + LE + TC + CT +  SD ;
+    //dividing by 10 is off the chain
+    emit OverAllSustainabilityScore(overAllscore, cathodeType);
+}
+
+}
