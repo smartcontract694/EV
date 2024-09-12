@@ -7,20 +7,20 @@ import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 
 import "hardhat/console.sol";
 import "./CompManuNFT.sol";
-import "./EarthMineralsNFT.sol";
+import "./EarthMetalsNFT.sol";
 import "./RegistrationSC.sol";
 
 contract EVBatteryManagement {
 
 address manager; // EA
 bytes32 signedAgreementHash;
-mapping (address=> address) earthMineralsNFTSC;//address of each earth mineral NFT owner is mapped to address of SC
+mapping (address=> address) earthMetalsNFTSC;//address of each earth mineral NFT owner is mapped to address of SC
 mapping (address=> address) compManudNFTSC;//address of each component manufacturer NFT owner is mapped to address of SC
 ///////////////////////////////////////
 ///Composable Cathode NFTs Mappings////
 ///////////////////////////////////////
 mapping(address=>mapping(uint256=>CathodeNFT)) Cathodes;//mapping between every SC address of the cathode NFT and the token ID of the NFT
-mapping(address=>mapping(uint256=>mapping(uint256=>EMineralsNFT[]))) ComposableCathode;//mapping between SC address of the cathode and mapping between Parent Cathode tokenID and its earth minerals as children
+mapping(address=>mapping(uint256=>mapping(uint256=>EMetalsNFT[]))) ComposableCathode;//mapping between SC address of the cathode and mapping between Parent Cathode tokenID and its earth minerals as children
 //EV Battery Digital Passport
 mapping(address=>mapping(uint256=>CathodeNFT)) DigitalPassCathodes;//mapping between the digital passport SC address and its ID to the cathode NFT
 mapping(address=>mapping(uint256=>AnodeNFT)) DigitalPassAnodes;//mapping between the digital passport SC address and its ID to the anode NFT
@@ -50,7 +50,7 @@ struct CathodeNFT {
 
 }
 //Child
-struct EMineralsNFT { 
+struct EMetalsNFT { 
    uint256 tokenID;
    address SCaddress;
    address owner;
@@ -88,12 +88,12 @@ struct SeperatorNFT {
 }
 
 //event
-event NewEarthMineralNFTContractAddedSuccessfully(address EMCreator, address EMNFTSC);
+event NewEarthMetalNFTContractAddedSuccessfully(address EMCreator, address EMNFTSC);
 event NewComponentManufacturerNFTContractAddedSuccessfully(address compManufCreator,address compManufNFTSC);
-event ConfirmReceivingEarthMinerals(address EMinOwner, uint256 timestamp,uint256 tokenId);
-event EarthMineralsNFTransferredToNewOwner(address fromEMinOwner, address toNewOwner,address EarthMinNFTSCaddress, uint EarthMinTokenId);
-event ComposableCathodeNFTCreatedSuccessfully(address cathodeOwner, address CathodeSCaddress, uint CathodeParentID, uint EarthMineralsNumOfChildren);
-event NewChildEarthMineralNFTAddedToCathodeComposableNFT(address childEarthMineralSCaddress, uint childEarthMineraltokenID, address childchildEarthMineralOwner);
+event ConfirmReceivingEarthMetals(address EMetOwner, uint256 timestamp,uint256 tokenId);
+event EarthMetalsNFTransferredToNewOwner(address fromEMetOwner, address toNewOwner,address EarthMetNFTSCaddress, uint EarthMetTokenId);
+event ComposableCathodeNFTCreatedSuccessfully(address cathodeOwner, address CathodeSCaddress, uint CathodeParentID, uint EarthMetalsNumOfChildren);
+event NewChildEarthMetalNFTAddedToCathodeComposableNFT(address childEarthMetalSCaddress, uint childEarthMetaltokenID, address childEarthMetalOwner);
 event EV_Battery_DigitalPassportSuccessfullyCreated(address EVBatteryDigitalPassportNFT_SCaddress,uint digitalPassTokenID, address subcomponentSCaddress, uint anodeTokenID, uint cathodeTokenID, uint electrolyteTokenID, uint seperatorTokenID);      
 
 
@@ -109,10 +109,10 @@ event EV_Battery_DigitalPassportSuccessfullyCreated(address EVBatteryDigitalPass
       _;
     }
 //Earth Minerals NFT SC
-function addEarthMineralsNFTSCs( address EMNFTSC) public {
+function addEarthMetalsNFTSCs( address EMNFTSC) public {
     registration.isRegisteredEMNFTCreator(msg.sender);//EM Creator must be registered
-    earthMineralsNFTSC[msg.sender] = EMNFTSC;
-    emit NewEarthMineralNFTContractAddedSuccessfully(msg.sender, EMNFTSC);
+    earthMetalsNFTSC[msg.sender] = EMNFTSC;
+    emit NewEarthMetalNFTContractAddedSuccessfully(msg.sender, EMNFTSC);
 }
 //Component Manufacturer NFT SC
 function addCompManufNFTSCs(address compManufNFTSC) public {
@@ -121,28 +121,28 @@ function addCompManufNFTSCs(address compManufNFTSC) public {
     emit NewComponentManufacturerNFTContractAddedSuccessfully(msg.sender, compManufNFTSC);
 
 }
-//Refinery: Confirm receiving Earth Minerals for processing
-function RefineryReceivedEarthMinerals(address EMinOwner, uint256 tokenId) public
+//Refinery: Confirm receiving Earth Metals for processing
+function RefineryReceivedEarthMetals(address EMetOwner, uint256 tokenId) public
 {
   registration.isRegisteredRefineryWorker(msg.sender); //only if registered as a refinery worker
-  emit ConfirmReceivingEarthMinerals(EMinOwner, block.timestamp, tokenId);
+  emit ConfirmReceivingEarthMetals(EMetOwner, block.timestamp, tokenId);
 }
 
 //Refinery: update dynamic NFT status
-function UpdateDynamicNFTEarthMineralsStatus(address EMinOwner, uint256 tokenId)public
+function UpdateDynamicNFTEarthMetalsStatus(address EMetOwner, uint256 tokenId)public
 {
   registration.isRegisteredRefineryWorker(msg.sender); //only if registered as a refinery worker
-   address EarthMinNFTSC = earthMineralsNFTSC[EMinOwner];
-    EarthMineralsNFT(EarthMinNFTSC).UpdateDynamicNFTstatus("refined state",tokenId);
+   address EarthMetNFTSC = earthMetalsNFTSC[EMetOwner];
+    EarthMetalsNFT(EarthMetNFTSC).UpdateDynamicNFTstatus("refined state",tokenId);
 }
 
-//only component Manudacturers can get the earth minerals NFT
-function ReceiveEarthMineralsNFT(address EMinOwner, uint256 tokenId) public
+//only component Manudacturers can get the earth metals NFT
+function ReceiveEarthMetalsNFT(address EMetOwner, uint256 tokenId) public
 {
     registration.isRegisteredCompMnaufNFTCreator(msg.sender);//only if registered as component Manufacturer
-    address EarthMinNFTSC = earthMineralsNFTSC[EMinOwner];
-    EarthMineralsNFT(EarthMinNFTSC).TransferNFTOwnership(tokenId, msg.sender);
-     emit EarthMineralsNFTransferredToNewOwner(EMinOwner, msg.sender,EarthMinNFTSC, tokenId);
+    address EarthMetNFTSC = earthMetalsNFTSC[EMetOwner];
+    EarthMetalsNFT(EarthMetNFTSC).TransferNFTOwnership(tokenId, msg.sender);
+     emit EarthMetalsNFTransferredToNewOwner(EMetOwner, msg.sender,EarthMetNFTSC, tokenId);
 } 
  
 
@@ -152,24 +152,24 @@ function ReceiveEarthMineralsNFT(address EMinOwner, uint256 tokenId) public
 //[[1,"0x794387c524f755eabABB7a7FedCF296BB70dFf1C","0xAb8483F64d9C6d1EcF9b849Ae677dD3315835cb2","0x4B20993Bc481177ec7E8f571ceCaE8A9e22C02db",5],[2,"0x794387c524f755eabABB7a7FedCF296BB70dFf1C","0xAb8483F64d9C6d1EcF9b849Ae677dD3315835cb2","0x4B20993Bc481177ec7E8f571ceCaE8A9e22C02db",5]]
 //uint AvatarTokenID, address ANFTcreator,
   //  uint price,uint numOfcomposables, uint DigArtiTokenID
-  function createCathodeComposableNFT(  CathodeNFT memory cathodeNFT, EMineralsNFT[] memory earMinNFT) public{
+  function createCathodeComposableNFT(  CathodeNFT memory cathodeNFT, EMetalsNFT[] memory earMetNFT) public{
         registration.isRegisteredCompMnaufNFTCreator(msg.sender);//only if registered as component Manufacturer
        
         address CompManuNFTSC = compManudNFTSC[msg.sender];
         require(msg.sender == (CompManuNFT(CompManuNFTSC).ownerOf(cathodeNFT.tokenID)));
-         for(uint i =0; i < earMinNFT.length; i++)
+         for(uint i =0; i < earMetNFT.length; i++)
          {
-              registration.isRegisteredEMNFTCreator(earMinNFT[i].originalCreator);
-              address EarthMineSC = earthMineralsNFTSC[earMinNFT[i].originalCreator];
-              require(msg.sender == (EarthMineralsNFT(EarthMineSC).ownerOf(earMinNFT[i].tokenID)));
+              registration.isRegisteredEMNFTCreator(earMetNFT[i].originalCreator);
+              address EarthMeteSC = earthMetalsNFTSC[earMetNFT[i].originalCreator];
+              require(msg.sender == (EarthMetalsNFT(EarthMeteSC).ownerOf(earMetNFT[i].tokenID)));
          }
         Cathodes[cathodeNFT.SCaddress][cathodeNFT.tokenID]= cathodeNFT; //initializing the mapping 
 
-        for(uint i =0; i < earMinNFT.length; i++){
-        ComposableCathode[cathodeNFT.SCaddress][cathodeNFT.tokenID][earMinNFT[i].tokenID].push(earMinNFT[i]);
-        emit NewChildEarthMineralNFTAddedToCathodeComposableNFT(earMinNFT[i].SCaddress, earMinNFT[i].tokenID, earMinNFT[i].owner);
+        for(uint i =0; i < earMetNFT.length; i++){
+        ComposableCathode[cathodeNFT.SCaddress][cathodeNFT.tokenID][earMetNFT[i].tokenID].push(earMetNFT[i]);
+        emit NewChildEarthMetalNFTAddedToCathodeComposableNFT(earMetNFT[i].SCaddress, earMetNFT[i].tokenID, earMetNFT[i].owner);
         }
-        emit ComposableCathodeNFTCreatedSuccessfully(cathodeNFT.owner, cathodeNFT.SCaddress, cathodeNFT.tokenID,  earMinNFT.length);
+        emit ComposableCathodeNFTCreatedSuccessfully(cathodeNFT.owner, cathodeNFT.SCaddress, cathodeNFT.tokenID,  earMetNFT.length);
   }
  
 //EV Battery Digital Passport Composable NFT
